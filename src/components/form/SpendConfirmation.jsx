@@ -171,14 +171,13 @@ export default function SpendConfirmation({ onSubmit }) {
           </Card>
         </motion.div>
 
-        {/* Navigation */}
-        <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 pt-8">
+        {/* Navigation - Desktop only (mobile uses fixed bottom nav) */}
+        <motion.div variants={itemVariants} className="hidden sm:flex flex-col sm:flex-row gap-4 pt-8">
           <Button 
             type="button" 
             variant="outline" 
             size="lg"
             onClick={() => window.history.back()}
-            className="sm:w-auto w-full"
           >
             <ArrowLeft className="mr-2 w-4 h-4" />
             Back
@@ -186,7 +185,7 @@ export default function SpendConfirmation({ onSubmit }) {
           <Button 
             type="submit" 
             size="lg" 
-            className="sm:w-auto w-full group"
+            className="group"
           >
             <Sparkles className="mr-2 w-4 h-4" />
             Generate Energy Audit

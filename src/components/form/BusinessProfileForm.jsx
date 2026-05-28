@@ -165,12 +165,12 @@ export default function BusinessProfileForm({ onNext }) {
           <p className="text-xs text-zinc-500">Average hours your business operates per day.</p>
         </motion.div>
 
-        {/* Submit */}
-        <motion.div variants={itemVariants} className="pt-8">
+        {/* Submit - Desktop only (mobile uses fixed bottom nav) */}
+        <motion.div variants={itemVariants} className="pt-8 hidden sm:block">
           <Button 
             type="submit" 
             size="lg" 
-            className="w-full sm:w-auto group"
+            className="group"
             disabled={!isComplete}
           >
             Continue to Energy Setup
