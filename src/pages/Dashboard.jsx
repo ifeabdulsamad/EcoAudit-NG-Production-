@@ -1,4 +1,9 @@
 import { useAudit } from "../context/AuditContext.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useFeatureGate } from "../hooks/useFeatureGate.js";
+import { saveAudit } from "../api/auditApi.js";
+import AuthModal from "../components/AuthModal.jsx";
+import UpgradeModal from "../components/UpgradeModal.jsx";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -14,7 +19,10 @@ import {
   Building2,
   MapPin,
   TrendingDown,
-  Leaf
+  Leaf,
+  Save,
+  Lock,
+  Check
 } from "lucide-react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
@@ -29,6 +37,7 @@ import AIReport from "../components/dashboard/AIReport";
 import RecommendationCards from "../components/dashboard/RecommendationCards";
 import SolarVerdictCard from "../components/dashboard/SolarVerdictCard";
 import ExportButton from "../components/shared/ExportButton";
+import { useState } from "react";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -83,7 +92,7 @@ function EmptyState() {
   );
 }
 
-function DashboardHeader({ auditData, auditResults }) {
+function DashboardHeader({ auditData, auditResults, onSave, canSave, isSaved }) {
   const navigate = useNavigate();
   const { reset } = useAudit();
 
@@ -131,7 +140,25 @@ function DashboardHeader({ auditData, auditResults }) {
       </div>
       
       <div className="flex flex-wrap gap-3">
-        <ExportButton businessName={auditData.businessType} />
+        {isSaved ? (
+          <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 px-4 py-2">
+            <Check className="w-4 h-4 mr-2" />
+            Saved
+          </Badge>
+        ) : (
+          <Button 
+            onClick={onSave}
+            disabled={!canSave}
+            className={!canSave ? "opacity-50" : ""}
+          >
+            <Save className="mr-2 w-4 h-4" />
+            Save Audit
+          </Button>
+        )}
+        <ExportButton 
+          businessName={auditData.businessType}
+          onUpgradeRequired={() => setShowUpgradeModal(true)}
+        />
         <Button 
           variant="outline" 
           onClick={() => {
@@ -208,7 +235,13 @@ function StatCards({ auditResults }) {
 
 export default function Dashboard() {
   const { auditResults, auditData, reset } = useAudit();
+  const { user } = useAuth();
+  const { canSaveAudit, isPro, canAccess } = useFeatureGate();
   const navigate = useNavigate();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   
   // Fetch fresh solar vendor data
   const { 
@@ -235,6 +268,29 @@ export default function Dashboard() {
     auditSummary,
   } = auditResults;
 
+  const handleSaveAudit = async () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    if (!canSaveAudit()) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await saveAudit(user, auditData, auditResults);
+      setIsSaved(true);
+    } catch (error) {
+      console.error('Failed to save audit:', error);
+      alert('Failed to save audit. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 pt-24 pb-16">
       {/* Background effects */}
@@ -247,7 +303,13 @@ export default function Dashboard() {
           initial="hidden"
           animate="visible"
         >
-          <DashboardHeader auditData={auditData} auditResults={auditResults} />
+          <DashboardHeader 
+            auditData={auditData} 
+            auditResults={auditResults}
+            onSave={handleSaveAudit}
+            canSave={canSaveAudit() && !saving}
+            isSaved={isSaved}
+          />
           
           <StatCards auditResults={auditResults} />
 
@@ -256,7 +318,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-2 p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <p className="text-sm text-zinc-400">
-                Estimates based on standard appliance ratings and Nigerian grid averages. 
+                Estimates based on standard appliance ratings and Nigerian grid averages.
                 Actual costs may vary based on specific usage patterns and local conditions.
               </p>
             </div>
@@ -303,11 +365,51 @@ export default function Dashboard() {
 
             {/* Full Width - AI Report */}
             <motion.div variants={itemVariants} className="lg:col-span-12">
-              <AIReport auditResults={auditResults} />
+              {canAccess('ai_report') ? (
+                <AIReport auditResults={auditResults} />
+              ) : (
+                <Card className="bg-zinc-900/80 backdrop-blur-xl border-zinc-800">
+                  <CardContent className="p-8 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+                      <Brain className="w-8 h-8 text-emerald-400" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">AI Report</h3>
+                    <p className="text-zinc-400 mb-6 max-w-md mx-auto">
+                      Get a detailed AI-generated energy audit report with personalized recommendations and insights.
+                    </p>
+                    <div className="flex items-center justify-center gap-3">
+                      <Button onClick={() => setShowUpgradeModal(true)}>
+                        <Lock className="w-4 h-4 mr-2" />
+                        Unlock AI Report
+                      </Button>
+                      <Button variant="outline" onClick={() => navigate('/pricing')}>
+                        View Plans
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </motion.div>
           </div>
         </motion.div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          // After successful auth, try saving again
+          handleSaveAudit();
+        }}
+      />
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Save Audit"
+      />
     </div>
   );
 }

@@ -1,6 +1,60 @@
 import { jsPDF } from "jspdf";
 import { formatDate } from "./formatters.js";
 
+// Fallback PDF export using html2canvas with CSS sanitization
+async function captureWithHtml2canvas(element) {
+  const html2canvas = (await import("html2canvas")).default;
+  
+  // Create a clean clone without Tailwind classes
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = `
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: 1200px;
+    background: #18181b;
+    color: #ffffff;
+    padding: 40px;
+    font-family: system-ui, -apple-system, sans-serif;
+    z-index: -1;
+  `;
+  
+  // Clone and strip classes
+  const clone = element.cloneNode(true);
+  const allElements = clone.querySelectorAll('*');
+  allElements.forEach(el => {
+    el.removeAttribute('class');
+    // Keep only basic structural styles
+    const tag = el.tagName.toLowerCase();
+    if (tag === 'h1' || tag === 'h2' || tag === 'h3') {
+      el.style.cssText = 'color: #ffffff; margin: 0 0 16px 0; font-weight: bold;';
+    } else if (tag === 'p' || tag === 'span') {
+      el.style.cssText = 'color: #a1a1aa; margin: 0;';
+    } else if (tag === 'div') {
+      el.style.cssText = 'background: transparent; color: #ffffff;';
+    } else if (tag === 'svg') {
+      el.style.cssText = 'color: #10b981;';
+    }
+  });
+  
+  wrapper.appendChild(clone);
+  document.body.appendChild(wrapper);
+  
+  try {
+    const canvas = await html2canvas(wrapper, {
+      backgroundColor: "#18181b",
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      width: 1200,
+      windowWidth: 1200,
+    });
+    return canvas;
+  } finally {
+    document.body.removeChild(wrapper);
+  }
+}
+
 export async function exportPdf(elementId, businessName) {
   const element = document.getElementById(elementId);
   if (!element) {
@@ -9,17 +63,9 @@ export async function exportPdf(elementId, businessName) {
   }
 
   try {
-    const html2canvas = (await import("html2canvas")).default;
-
-    const canvas = await html2canvas(element, {
-      backgroundColor: "#0a0f0d",
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      windowWidth: 1200,
-    });
-
+    const canvas = await captureWithHtml2canvas(element);
     const imgData = canvas.toDataURL("image/png");
+    
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
@@ -44,7 +90,8 @@ export async function exportPdf(elementId, businessName) {
     }
 
     const sanitizedName = (businessName || "Business").replace(/[^a-zA-Z0-9]/g, "_");
-    pdf.save(`EcoAudit-${sanitizedName}-${formatDate()}.pdf`);
+    const filename = `EcoAudit-${sanitizedName}-${formatDate()}.pdf`;
+    pdf.save(filename);
   } catch (err) {
     console.warn("PDF export failed:", err.message);
     throw err;

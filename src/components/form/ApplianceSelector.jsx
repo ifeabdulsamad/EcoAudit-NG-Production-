@@ -10,12 +10,72 @@ import {
   Lightbulb,
   Monitor,
   Settings,
-  Check
+  Check,
+  Refrigerator,
+  Wind,
+  Droplets,
+  UtensilsCrossed,
+  Microwave,
+  Coffee,
+  Blender,
+  Lamp,
+  Tv,
+  Laptop,
+  Printer,
+  Camera,
+  Projector,
+  Smartphone,
+  ShoppingCart,
+  Phone,
+  Waves,
+  Droplet,
+  Shirt,
+  Sun,
+  Fan
 } from "lucide-react";
 import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { Badge } from "../ui/badge";
 import applianceDatabase from "../../engine/applianceDatabase.js";
+
+// Map appliance IDs to Lucide icons
+const APPLIANCE_ICONS = {
+  // Cooling
+  chest_freezer: Refrigerator,
+  refrigerator: Refrigerator,
+  ac_1hp: Snowflake,
+  "ac_1.5hp": Snowflake,
+  ac_2hp: Snowflake,
+  ceiling_fan: Fan,
+  water_dispenser: Droplets,
+  // Cooking
+  industrial_cooker: UtensilsCrossed,
+  microwave: Microwave,
+  deep_fryer: Flame,
+  blender: Blender,
+  electric_kettle: Coffee,
+  toaster: Flame,
+  // Lighting
+  led_bulb: Lightbulb,
+  fluorescent_tube: Lamp,
+  incandescent_bulb: Lamp,
+  // Electronics
+  tv_32inch: Tv,
+  tv_43inch: Tv,
+  desktop_pc: Monitor,
+  laptop: Laptop,
+  laser_printer: Printer,
+  cctv_system: Camera,
+  projector: Projector,
+  phone_charger: Smartphone,
+  pos_terminal: ShoppingCart,
+  intercom: Phone,
+  // Heavy Duty
+  washing_machine: Waves,
+  water_pump: Droplet,
+  electric_iron: Shirt,
+  solar_panel_system: Sun,
+};
 
 const CATEGORY_CONFIG = {
   all: { label: "All", icon: null },
@@ -119,6 +179,7 @@ export default function ApplianceSelector({ selected, onUpdate }) {
         {filtered.map((app) => {
           const isSelected = selected.find((a) => a.id === app.id);
           const categoryConfig = CATEGORY_CONFIG[app.category];
+          const IconComponent = APPLIANCE_ICONS[app.id] || Settings;
           
           return (
             <motion.div key={app.id} variants={itemVariants}>
@@ -131,12 +192,12 @@ export default function ApplianceSelector({ selected, onUpdate }) {
                 }`}
               >
                 <div className="p-4 flex flex-col items-center text-center gap-2">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xs font-bold ${
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                     isSelected 
-                      ? "bg-emerald-500/20 text-emerald-400" 
-                      : "bg-zinc-700/50 text-zinc-500"
+                      ? `bg-${categoryConfig.color}-500/20 text-${categoryConfig.color}-400` 
+                      : "bg-zinc-700/50 text-zinc-400"
                   }`}>
-                    {isSelected ? <Check className="w-5 h-5" /> : app.icon}
+                    {isSelected ? <Check className="w-5 h-5" /> : <IconComponent className="w-5 h-5" />}
                   </div>
                   <div>
                     <div className={`text-sm font-medium ${isSelected ? "text-white" : "text-zinc-300"}`}>
@@ -172,6 +233,9 @@ export default function ApplianceSelector({ selected, onUpdate }) {
                   const info = getApplianceInfo(app.id);
                   if (!info) return null;
                   
+                  const IconComponent = APPLIANCE_ICONS[app.id] || Settings;
+                  const categoryConfig = CATEGORY_CONFIG[info.category];
+                  
                   return (
                     <motion.div
                       key={app.id}
@@ -181,8 +245,8 @@ export default function ApplianceSelector({ selected, onUpdate }) {
                       exit={{ opacity: 0 }}
                       className="flex items-center gap-4 p-3 bg-zinc-900/50 rounded-lg"
                     >
-                      <div className="w-10 h-10 rounded-lg bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-500">
-                        {info.icon}
+                      <div className={`w-10 h-10 rounded-lg bg-${categoryConfig.color}-500/10 flex items-center justify-center text-${categoryConfig.color}-400`}>
+                        <IconComponent className="w-5 h-5" />
                       </div>
                       
                       <div className="flex-1 min-w-0">

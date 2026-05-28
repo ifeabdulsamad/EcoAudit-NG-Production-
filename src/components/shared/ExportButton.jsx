@@ -1,14 +1,23 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Loader2, Check, FileText } from "lucide-react";
+import { Download, Loader2, Check, Lock } from "lucide-react";
 import { Button } from "../ui/button";
 import { exportPdf } from "../../utils/pdfExport.js";
+import { useFeatureGate } from "../../hooks/useFeatureGate.js";
 
-export default function ExportButton({ businessName }) {
+export default function ExportButton({ businessName, onUpgradeRequired }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const { canAccess } = useFeatureGate();
+
+  const canExport = canAccess('pdf_export');
 
   const handleExport = async () => {
+    if (!canExport) {
+      onUpgradeRequired?.();
+      return;
+    }
+
     setLoading(true);
     setSuccess(false);
     try {
@@ -51,6 +60,17 @@ export default function ExportButton({ businessName }) {
           >
             <Check className="mr-2 w-4 h-4" />
             Downloaded!
+          </motion.div>
+        ) : !canExport ? (
+          <motion.div
+            key="locked"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center"
+          >
+            <Lock className="mr-2 w-4 h-4" />
+            Export PDF
           </motion.div>
         ) : (
           <motion.div

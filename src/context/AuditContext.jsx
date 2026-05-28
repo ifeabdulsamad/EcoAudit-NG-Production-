@@ -43,6 +43,13 @@ function auditReducer(state, action) {
       };
     case "SET_RESULTS":
       return { ...state, auditResults: action.payload };
+    case "LOAD_SAVED_AUDIT":
+      return {
+        ...state,
+        auditData: action.payload.audit_data,
+        auditResults: action.payload.results,
+        currentStep: 4,
+      };
     case "RESET":
       return { ...initialState };
     default:
@@ -64,6 +71,8 @@ export function AuditProvider({ children }) {
     dispatch({ type: "SET_APPLIANCES", payload: apps });
   const setResults = (results) =>
     dispatch({ type: "SET_RESULTS", payload: results });
+  const loadSavedAudit = (audit) =>
+    dispatch({ type: "LOAD_SAVED_AUDIT", payload: audit });
   const reset = () => dispatch({ type: "RESET" });
 
   return (
@@ -75,6 +84,7 @@ export function AuditProvider({ children }) {
         updateGenerator,
         setAppliances,
         setResults,
+        loadSavedAudit,
         reset,
       }}
     >
