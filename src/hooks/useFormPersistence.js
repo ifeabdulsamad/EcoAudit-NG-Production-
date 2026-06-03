@@ -81,6 +81,11 @@ export function useFormPersistence(formData, debounceMs = 1000) {
   const lastSavedRef = useRef(null);
 
   useEffect(() => {
+    // Skip saving if formData is null (e.g., while draft dialog is showing)
+    if (formData === null || formData === undefined) {
+      return;
+    }
+
     // Debounce the save operation
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);

@@ -88,7 +88,12 @@ function HeroSection() {
               variant="outline"
               className="px-4 py-2 text-sm border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
             >
-              <Leaf className="w-4 h-4 mr-2" />
+              <img
+                src="/favicon.svg"
+                alt="EcoAudit NG"
+                className="w-4 h-4 mr-2"
+              />
+              {/* <Leaf className="w-4 h-4 mr-2" /> */}
               AI-Powered Energy Intelligence for Nigerian SMEs
             </Badge>
           </motion.div>

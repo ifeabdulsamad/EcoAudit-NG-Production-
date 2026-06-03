@@ -30,7 +30,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 }
 };
 
-export default function SpendConfirmation({ onSubmit }) {
+export default function SpendConfirmation({ onSubmit, onPrev }) {
   const { auditData, updateAuditData } = useAudit();
 
   // Calculate estimated fuel spend
@@ -177,7 +177,7 @@ export default function SpendConfirmation({ onSubmit }) {
             type="button" 
             variant="outline" 
             size="lg"
-            onClick={() => window.history.back()}
+            onClick={onPrev}
           >
             <ArrowLeft className="mr-2 w-4 h-4" />
             Back

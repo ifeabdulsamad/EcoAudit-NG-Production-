@@ -299,11 +299,10 @@ export default function Audit() {
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [draftAge, setDraftAge] = useState(null);
   
-  // Persist form data
-  useFormPersistence({
-    step: currentStep,
-    data: auditData,
-  });
+  // Persist form data (disabled while draft dialog is showing to avoid overwriting saved draft)
+  useFormPersistence(
+    showDraftDialog ? null : { step: currentStep, data: auditData }
+  );
 
   // Check for draft on mount
   useEffect(() => {
@@ -314,7 +313,7 @@ export default function Audit() {
         setShowDraftDialog(true);
       }
     }
-  }, [currentStep]);
+  }, []);
 
   const restoreDraft = useCallback(() => {
     const draft = loadFormDraft();
@@ -462,6 +461,7 @@ export default function Audit() {
                 {currentStep === 3 && (
                   <SpendConfirmation 
                     onSubmit={handleSubmit}
+                    onPrev={handlePrev}
                     isSubmitting={isSubmitting}
                   />
                 )}
