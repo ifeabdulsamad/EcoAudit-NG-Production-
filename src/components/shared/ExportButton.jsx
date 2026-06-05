@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Loader2, Check, Lock } from "lucide-react";
+import { Download, Loader2, Check, Lock, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { exportPdf } from "../../utils/pdfExport.js";
 import { useFeatureGate } from "../../hooks/useFeatureGate.js";
@@ -8,6 +8,7 @@ import { useFeatureGate } from "../../hooks/useFeatureGate.js";
 export default function ExportButton({ businessName, onUpgradeRequired }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState(false);
   const { canAccess } = useFeatureGate();
 
   const canExport = canAccess('pdf_export');
@@ -20,12 +21,15 @@ export default function ExportButton({ businessName, onUpgradeRequired }) {
 
     setLoading(true);
     setSuccess(false);
+    setError(false);
     try {
       await exportPdf("dashboard-content", businessName);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      console.warn("Export failed:", err.message);
+      console.error("Export failed:", err);
+      setError(true);
+      setTimeout(() => setError(false), 3000);
     } finally {
       setLoading(false);
     }
@@ -60,6 +64,17 @@ export default function ExportButton({ businessName, onUpgradeRequired }) {
           >
             <Check className="mr-2 w-4 h-4" />
             Downloaded!
+          </motion.div>
+        ) : error ? (
+          <motion.div
+            key="error"
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center text-red-400"
+          >
+            <X className="mr-2 w-4 h-4" />
+            Export Failed
           </motion.div>
         ) : !canExport ? (
           <motion.div

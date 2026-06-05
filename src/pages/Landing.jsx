@@ -91,7 +91,7 @@ function HeroSection() {
               <img
                 src="/favicon.svg"
                 alt="EcoAudit NG"
-                className="w-4 h-4 mr-2"
+                className="w-4 h-4 mr-2 "
               />
               {/* <Leaf className="w-4 h-4 mr-2" /> */}
               AI-Powered Energy Intelligence for Nigerian SMEs
