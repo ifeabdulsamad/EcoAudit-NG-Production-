@@ -12,18 +12,24 @@ export default function Testing() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isHydrated && !isTestingMode) {
+    // Wait for hydration
+    if (!isHydrated) {
+      return;
+    }
+
+    // If testing mode not active, enable it
+    if (!isTestingMode) {
       enableTestingMode();
+      return;
     }
-    if (isHydrated && isTestingMode) {
-      // Redirect to dashboard once testing mode is active
-      navigate('/dashboard', { replace: true });
-    }
+
+    // Testing mode is active, redirect to dashboard
+    navigate('/dashboard', { replace: true });
   }, [isHydrated, isTestingMode, enableTestingMode, navigate]);
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-      <div className="text-emerald-400 animate-pulse">Enabling testing mode...</div>
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center pt-20">
+      <div className="text-emerald-400 animate-pulse text-lg">Enabling testing mode...</div>
     </div>
   );
 }
