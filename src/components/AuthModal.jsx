@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
-import { Mail, Lock, User, AlertCircle, Loader2 } from 'lucide-react'
+import { Mail, Lock, User, AlertCircle, Loader2, Building2, Phone } from 'lucide-react'
 import './AuthModal.css'
 
 const AuthModal = ({ isOpen, onClose, onSuccess }) => {
@@ -9,6 +9,11 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [businessName, setBusinessName] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('')
+  
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -53,7 +58,19 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       if (isSignUp) {
-        const { error } = await signUpWithEmail(email, password)
+        if (password !== confirmPassword) {
+          setError({ type: 'error', message: 'Passwords do not match.' })
+          setLoading(false)
+          return
+        }
+        
+        const metadata = {
+          full_name: fullName,
+          business_name: businessName,
+          phone_number: phoneNumber
+        }
+        
+        const { error } = await signUpWithEmail(email, password, metadata)
         if (error) throw error
         setError({ type: 'success', message: 'Check your email to confirm your account!' })
       } else {
@@ -80,6 +97,16 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
     }
   }
 
+  const resetForm = () => {
+    setEmail('')
+    setPassword('')
+    setConfirmPassword('')
+    setFullName('')
+    setBusinessName('')
+    setPhoneNumber('')
+    setError(null)
+  }
+
   return (
     <div className="auth-modal-overlay" onClick={onClose}>
       <motion.div 
@@ -89,6 +116,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
         exit={{ opacity: 0, scale: 0.95, y: 20 }}
         transition={{ duration: 0.2 }}
         onClick={e => e.stopPropagation()}
+        style={isSignUp ? { maxHeight: '90vh', overflowY: 'auto' } : {}}
       >
         <button className="close-btn" onClick={onClose}>×</button>
         
@@ -141,6 +169,43 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
         </div>
 
         <form onSubmit={handleEmailSubmit}>
+          {isSignUp && (
+            <>
+              <div className="input-group">
+                <User className="input-icon w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div className="input-group">
+                <Building2 className="input-icon w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Business Name"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <div className="input-group">
+                <Phone className="input-icon w-5 h-5" />
+                <input
+                  type="tel"
+                  placeholder="Phone Number (Optional)"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+            </>
+          )}
+
           <div className="input-group">
             <Mail className="input-icon w-5 h-5" />
             <input
@@ -152,6 +217,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
               disabled={loading}
             />
           </div>
+          
           <div className="input-group">
             <Lock className="input-icon w-5 h-5" />
             <input
@@ -164,6 +230,22 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
               minLength={6}
             />
           </div>
+
+          {isSignUp && (
+            <div className="input-group">
+              <Lock className="input-icon w-5 h-5" />
+              <input
+                type="password"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                disabled={loading}
+                minLength={6}
+              />
+            </div>
+          )}
+
           <button type="submit" className="email-btn" disabled={loading}>
             {loading ? (
               <>
@@ -179,10 +261,11 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
         <p className="auth-switch">
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}
           <button 
+            type="button"
             className="link-btn" 
             onClick={() => {
               setIsSignUp(!isSignUp)
-              setError(null)
+              resetForm()
             }}
             disabled={loading}
           >

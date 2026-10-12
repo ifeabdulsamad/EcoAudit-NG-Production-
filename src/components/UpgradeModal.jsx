@@ -19,12 +19,20 @@ const UpgradeModal = ({ isOpen, onClose, featureName }) => {
     }
 
     setProcessing(true)
-    initializePayment(user, planType, () => {
+    try {
+      initializePayment(user, planType, () => {
+        setProcessing(false)
+        onClose()
+        alert('Payment successful! Your plan has been upgraded.')
+        window.location.reload()
+      })
+      // Paystack handles its own loading state after iframe opens
+      setTimeout(() => setProcessing(false), 3000); 
+    } catch (err) {
+      console.error("Payment initialization failed:", err)
+      alert("Error starting payment: " + err.message)
       setProcessing(false)
-      onClose()
-      alert('Payment successful! Your plan has been upgraded.')
-      window.location.reload()
-    })
+    }
   }
 
   const plans = [

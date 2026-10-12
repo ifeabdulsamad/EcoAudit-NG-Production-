@@ -110,6 +110,7 @@ function DashboardHeader({
   onSave,
   canSave,
   isSaved,
+  onUpgradeRequired,
 }) {
   const navigate = useNavigate();
   const { reset } = useAudit();
@@ -189,7 +190,7 @@ function DashboardHeader({
         )}
         <ExportButton
           businessName={auditData.businessType}
-          onUpgradeRequired={() => setShowUpgradeModal(true)}
+          onUpgradeRequired={onUpgradeRequired}
         />
         <Button
           variant="outline"
@@ -348,6 +349,7 @@ export default function Dashboard() {
             onSave={handleSaveAudit}
             canSave={canSaveAudit() && !saving}
             isSaved={isSaved}
+            onUpgradeRequired={() => setShowUpgradeModal(true)}
           />
 
           <StatCards auditResults={auditResults} />

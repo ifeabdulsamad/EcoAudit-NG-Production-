@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useAudit } from '../context/AuditContext'
 import { getUserAudits, deleteAudit } from '../api/auditApi'
@@ -13,13 +13,11 @@ const MyAudits = () => {
   const [audits, setAudits] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    if (user) {
-      loadAudits()
+  const loadAudits = useCallback(async () => {
+    if (!user) {
+      setLoading(false)
+      return
     }
-  }, [user])
-
-  const loadAudits = async () => {
     try {
       const data = await getUserAudits(user.id)
       setAudits(data)
@@ -28,7 +26,11 @@ const MyAudits = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user])
+
+  useEffect(() => {
+    loadAudits()
+  }, [loadAudits])
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this audit?')) return

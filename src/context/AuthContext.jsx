@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       const { data, error } = await supabase.auth.signInWithOAuth({ 
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/profile`
         }
       })
       return { data, error }
@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
     return { data, error }
   }
 
-  const signUpWithEmail = async (email, password) => {
+  const signUpWithEmail = async (email, password, metadata = {}) => {
     if (isTestingMode) {
       return { data: { user: FAKE_USER }, error: null }
     }
@@ -66,7 +66,8 @@ export const AuthProvider = ({ children }) => {
       email, 
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`
+        emailRedirectTo: `${window.location.origin}/profile`,
+        data: metadata
       }
     })
     return { data, error }

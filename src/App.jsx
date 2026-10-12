@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard.jsx";
 import MyAudits from "./pages/MyAudits.jsx";
 import Pricing from "./pages/Pricing.jsx";
 import Testing from "./pages/Testing.jsx";
+import Profile from "./pages/Profile.jsx";
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
               <Route path="/my-audits" element={<MyAudits />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/testing" element={<Testing />} />
+              <Route path="/profile" element={<Profile />} />
             </Routes>
           </AuditProvider>
         </AuthProvider>

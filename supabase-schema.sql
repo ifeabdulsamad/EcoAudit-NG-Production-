@@ -40,11 +40,16 @@ CREATE TABLE team_members (
 );
 
 -- ============================================
--- 4. ENABLE ROW LEVEL SECURITY (RLS)
+-- 4. ENABLE ROW LEVEL SECURITY (RLS) & GRANTS
 -- ============================================
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
+
+-- Grant permissions to authenticated users
+GRANT ALL ON TABLE public.profiles TO anon, authenticated;
+GRANT ALL ON TABLE public.audits TO anon, authenticated;
+GRANT ALL ON TABLE public.team_members TO anon, authenticated;
 
 -- ============================================
 -- 5. RLS POLICIES FOR PROFILES

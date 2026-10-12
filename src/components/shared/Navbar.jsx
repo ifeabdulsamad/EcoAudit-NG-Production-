@@ -4,6 +4,8 @@ import { useAudit } from "../../context/AuditContext.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useTestingMode } from "../../context/TestingModeContext.jsx";
 import AuthModal from "../AuthModal.jsx";
+import UpgradeModal from "../UpgradeModal.jsx";
+import ProfileDropdown from "./ProfileDropdown.jsx";
 import {
   Home,
   ClipboardList,
@@ -15,6 +17,14 @@ import {
   FolderOpen,
   AlertTriangle,
   Power,
+  Crown,
+  Building2,
+  MapPin,
+  Users,
+  FileText,
+  Paintbrush,
+  Settings,
+  CreditCard
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Button } from "../ui/button";
@@ -61,6 +71,12 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  // Default to 'free' if no tier is found
+  const tier = user?.user_metadata?.tier || 'free'; 
+  const fullName = user?.user_metadata?.full_name || 'User';
+  const businessName = user?.user_metadata?.business_name || '';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -141,34 +157,7 @@ export default function Navbar() {
           {/* Auth Buttons / User Menu */}
           <div className="hidden md:flex items-center gap-3">
             {user ? (
-              <>
-                <NavLink
-                  to="/my-audits"
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                    location.pathname === "/my-audits"
-                      ? "text-emerald-400 bg-emerald-500/10"
-                      : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
-                  }`}
-                >
-                  <FolderOpen className="w-4 h-4" />
-                  My Audits
-                </NavLink>
-                <div className="flex items-center gap-2 pl-3 border-l border-zinc-800">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                    <User className="w-4 h-4 text-emerald-400" />
-                  </div>
-                  <span className="text-sm text-zinc-300 max-w-[120px] truncate">
-                    {user.email}
-                  </span>
-                  <button
-                    onClick={handleSignOut}
-                    className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-all"
-                    title="Sign out"
-                  >
-                    <LogOut className="w-4 h-4" />
-                  </button>
-                </div>
-              </>
+              <ProfileDropdown setShowUpgradeModal={setShowUpgradeModal} />
             ) : (
               <>
                 <button
@@ -215,10 +204,11 @@ export default function Navbar() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2 }}
-            className="md:hidden bg-zinc-950/95 backdrop-blur-xl border-b border-zinc-800/50"
+            className="md:hidden bg-zinc-950/95 backdrop-blur-xl border-b border-zinc-800/50 overflow-y-auto max-h-[85vh]"
           >
             <div className="px-4 py-4 space-y-2">
-              {allNavItems.map((item) => {
+              {/* If no user, show generic top level items */}
+              {!user && allNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
 
@@ -238,17 +228,66 @@ export default function Navbar() {
                   </NavLink>
                 );
               })}
+
               {user ? (
                 <>
-                  <NavLink
-                    to="/my-audits"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50"
-                  >
-                    <FolderOpen className="w-5 h-5" />
-                    My Audits
+                  {/* Mobile Account Header */}
+                  <div className="px-4 py-2 mb-2 flex items-center gap-3 border-b border-zinc-800 pb-4">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                      <User className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-white">
+                        {businessName || fullName}
+                      </p>
+                      <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider">
+                        {tier} Tier
+                      </p>
+                    </div>
+                  </div>
+
+                  <NavLink to="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50">
+                    <Home className="w-5 h-5" /> Home / New Audit
                   </NavLink>
-                  <div className="pt-2 border-t border-zinc-800">
+
+                  {(tier === 'pro' || tier === 'business') && (
+                    <NavLink to="/my-audits" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50">
+                      <FolderOpen className="w-5 h-5" /> Audit History
+                    </NavLink>
+                  )}
+
+                  {tier === 'business' && (
+                    <>
+                      <NavLink to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50">
+                        <MapPin className="w-5 h-5" /> Locations
+                      </NavLink>
+                      <NavLink to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50">
+                        <Users className="w-5 h-5" /> Team
+                      </NavLink>
+                      <NavLink to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50">
+                        <FileText className="w-5 h-5" /> Reports
+                      </NavLink>
+                      <NavLink to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50">
+                        <Paintbrush className="w-5 h-5" /> White-label Settings
+                      </NavLink>
+                    </>
+                  )}
+
+                  <NavLink to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50">
+                    <Settings className="w-5 h-5" /> Profile Settings
+                  </NavLink>
+
+                  {tier === 'free' ? (
+                    <button onClick={() => { setShowUpgradeModal(true); setIsMobileMenuOpen(false); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 text-left">
+                      <Crown className="w-5 h-5" /> Upgrade to Pro
+                    </button>
+                  ) : (
+                    <NavLink to="/billing" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-zinc-400 hover:text-white hover:bg-zinc-800/50">
+                      <CreditCard className="w-5 h-5" /> Manage Subscription
+                    </NavLink>
+                  )}
+
+                  <div className="pt-2 border-t border-zinc-800 mt-2">
                     <button
                       onClick={() => {
                         handleSignOut();
@@ -262,7 +301,7 @@ export default function Navbar() {
                   </div>
                 </>
               ) : (
-                <div className="pt-2 border-t border-zinc-800 space-y-2">
+                <div className="pt-2 border-t border-zinc-800 space-y-2 mt-2">
                   <button
                     onClick={() => {
                       setShowAuthModal(true);
@@ -290,6 +329,12 @@ export default function Navbar() {
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
+      />
+
+      {/* Upgrade Modal */}
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)} 
       />
       </motion.nav>
     </>

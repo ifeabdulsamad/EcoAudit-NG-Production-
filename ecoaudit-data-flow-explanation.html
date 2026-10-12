@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoAudit NG — Data Flow Explanation</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0b;
+      color: #e4e4e7;
+      line-height: 1.7;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #18181b;
+      border-radius: 24px;
+      padding: 60px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      border: 1px solid #27272a;
+    }
+
+    /* Cover / Title Section */
+    .cover {
+      text-align: center;
+      padding-bottom: 50px;
+      border-bottom: 1px solid #27272a;
+      margin-bottom: 50px;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: #10b981;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 800;
+      color: #0a0a0b;
+    }
+
+    .logo-text {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .logo-text span {
+      color: #10b981;
+    }
+
+    .cover h1 {
+      font-size: 42px;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 12px;
+      letter-spacing: -1px;
+    }
+
+    .cover h1 span {
+      background: linear-gradient(135deg, #10b981, #34d399);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .cover .subtitle {
+      font-size: 18px;
+      color: #a1a1aa;
+      margin-bottom: 24px;
+    }
+
+    .cover .badge {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .cover .meta {
+      margin-top: 32px;
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      color: #71717a;
+      font-size: 14px;
+    }
+
+    .cover .meta span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Section Styles */
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-number {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #10b981;
+      border-radius: 8px;
+      text-align: center;
+      line-height: 32px;
+      font-size: 14px;
+      font-weight: 700;
+      margin-right: 12px;
+    }
+
+    h2 {
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      letter-spacing: -0.5px;
+    }
+
+    h2 .highlight {
+      color: #10b981;
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f4f4f5;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+
+    p {
+      color: #d4d4d8;
+      margin-bottom: 16px;
+      font-size: 15px;
+    }
+
+    ul, ol {
+      margin-bottom: 16px;
+      padding-left: 24px;
+    }
+
+    li {
+      color: #d4d4d8;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    li strong {
+      color: #f4f4f5;
+    }
+
+    /* Code blocks */
+    .code-block {
+      background: #09090b;
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 16px 0 24px;
+      overflow-x: auto;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #a1a1aa;
+    }
+
+    .code-block .keyword { color: #c084fc; }
+    .code-block .string { color: #34d399; }
+    .code-block .comment { color: #52525b; }
+    .code-block .function { color: #60a5fa; }
+    .code-block .variable { color: #fbbf24; }
+
+    /* Information Cards */
+    .info-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 16px 0 24px;
+    }
+
+    .info-card.accent-green {
+      border-left: 4px solid #10b981;
+    }
+
+    .info-card.accent-blue {
+      border-left: 4px solid #3b82f6;
+    }
+
+    .info-card.accent-amber {
+      border-left: 4px solid #f59e0b;
+    }
+
+    .info-card.accent-purple {
+      border-left: 4px solid #a855f7;
+    }
+
+    .info-card h4 {
+      color: #f4f4f5;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .info-card p {
+      color: #a1a1aa;
+      font-size: 14px;
+      margin-bottom: 0;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 14px;
+    }
+
+    th {
+      background: #27272a;
+      color: #f4f4f5;
+      font-weight: 600;
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid #3f3f46;
+    }
+
+    td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #27272a;
+      color: #d4d4d8;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Flow Diagram */
+    .flow-diagram {
+      background: #09090b;
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 16px 0 24px;
+      font-family: 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 2;
+      white-space: pre;
+      overflow-x: auto;
+    }
+
+    .flow-diagram .arrow { color: #52525b; }
+    .flow-diagram .step { color: #60a5fa; }
+    .flow-diagram .data { color: #34d399; }
+    .flow-diagram .highlight-text { color: #fbbf24; }
+    .flow-diagram .comment { color: #52525b; }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, #27272a, transparent);
+      margin: 40px 0;
+    }
+
+    /* Key Points */
+    .key-points {
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 16px 0 24px;
+    }
+
+    .key-points h4 {
+      color: #10b981;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .key-points li {
+      color: #d4d4d8;
+      margin-bottom: 8px;
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .container {
+        box-shadow: none;
+        border: none;
+        border-radius: 0;
+        padding: 40px;
+        background: white;
+      }
+      .cover h1 span {
+        -webkit-text-fill-color: #10b981;
+      }
+      .code-block {
+        background: #f4f4f5;
+        border-color: #e4e4e7;
+        color: #18181b;
+      }
+      .info-card {
+        background: #fafafa;
+        border-color: #e4e4e7;
+      }
+      .flow-diagram {
+        background: #f4f4f5;
+        border-color: #e4e4e7;
+      }
+      .key-points {
+        background: #f0fdf4;
+        border-color: #86efac;
+      }
+      p, li, td { color: #3f3f46; }
+      h2, h3, h4, th, .cover h1, .logo-text { color: #18181b; }
+      .cover .subtitle { color: #71717a; }
+      .container, body { color: #18181b; }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container { padding: 24px; }
+      .cover h1 { font-size: 28px; }
+      h2 { font-size: 22px; }
+      body { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    
+    <!-- COVER -->
+    <div class="cover">
+      <div class="logo">
+        <div class="logo-icon">E</div>
+        <span class="logo-text">EcoAudit <span>NG</span></span>
+      </div>
+      <h1>Complete <span>Data Flow</span> Guide</h1>
+      <p class="subtitle">A comprehensive walkthrough of how data moves through the EcoAudit NG energy audit application — from landing page to results dashboard</p>
+      <div class="badge">📋 Interview Preparation Document</div>
+      <div class="meta">
+        <span>📁 React 19 + Vite</span>
+        <span>🗄️ Supabase + Paystack</span>
+        <span>🤖 Gemini 2.5 Flash</span>
+      </div>
+    </div>
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="section">
+      <h2><span class="section-number">📑</span> Table of Contents</h2>
+      <ol style="padding-left: 32px;">
+        <li><strong>High-Level Architecture</strong></li>
+        <li><strong>Provider Hierarchy</strong> (Context nesting)</li>
+        <li><strong>Audit Form Wizard Flow</strong> (The Core Path)</li>
+        <li><strong>Form Persistence</strong> (localStorage drafts)</li>
+        <li><strong>Calculation Engine</strong> (The Core Algorithm)</li>
+        <li><strong>Solar Estimator</strong> (Merchant matching)</li>
+        <li><strong>Dashboard Data Flow</strong></li>
+        <li><strong>Authentication Flow</strong></li>
+        <li><strong>Freemium Gating</strong> (Feature access control)</li>
+        <li><strong>Payment Flow</strong> (Paystack)</li>
+        <li><strong>AI Report Flow</strong> (Gemini + fallback)</li>
+        <li><strong>PDF Export Flow</strong></li>
+        <li><strong>Testing Mode</strong></li>
+        <li><strong>Database Schema</strong></li>
+        <li><strong>Key Architectural Decisions</strong></li>
+      </ol>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 1. HIGH-LEVEL ARCHITECTURE -->
+    <div class="section">
+      <h2><span class="section-number">1</span> High-Level <span class="highlight">Architecture</span></h2>
+      <p>EcoAudit NG is a <strong>fully client-side React SPA</strong> — all heavy computations (energy calculations, solar matching, local report generation) happen in the browser. Supabase is only used for <strong>auth persistence</strong> and <strong>saving audit history</strong>. The app follows a <strong>Context + useReducer</strong> state management pattern with no external state library (no Redux, no Zustand).</p>
+
+      <div class="flow-diagram">
+<span class="step">React 19 SPA (Single Page Application)</span>
+├── <span class="data">Context Providers</span> <span class="comment">// wraps entire app</span>
+├── <span class="data">3-Step Audit Wizard</span> <span class="comment">// /audit page</span>
+├── <span class="data">Calculation Engine</span> <span class="comment">// synchronous, no server needed</span>
+├── <span class="data">Dashboard</span> <span class="comment">// results display</span>
+├── <span class="data">Supabase</span> <span class="comment">// auth + database (external)</span>
+├── <span class="data">Paystack</span> <span class="comment">// Nigerian payments (external)</span>
+└── <span class="data">Gemini API</span> <span class="comment">// optional AI reports (external)</span></div>
+
+      <h3>Tech Stack</h3>
+      <table>
+        <tr><th>Layer</th><th>Technology</th></tr>
+        <tr><td>Framework</td><td>React 19 + Vite 8</td></tr>
+        <tr><td>Routing</td><td>React Router v7</td></tr>
+        <tr><td>State Management</td><td>React Context + useReducer</td></tr>
+        <tr><td>Charts</td><td>Recharts 3</td></tr>
+        <tr><td>PDF Export</td><td>jsPDF + html-to-image</td></tr>
+        <tr><td>Animations</td><td>Framer Motion</td></tr>
+        <tr><td>AI/LLM</td><td>Gemini 2.5 Flash (optional)</td></tr>
+        <tr><td>Auth & Database</td><td>Supabase</td></tr>
+        <tr><td>Payments</td><td>Paystack (Nigerian payment gateway)</td></tr>
+        <tr><td>Styling</td><td>Custom CSS + Tailwind (utility classes)</td></tr>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 2. PROVIDER HIERARCHY -->
+    <div class="section">
+      <h2><span class="section-number">2</span> Provider <span class="highlight">Hierarchy</span></h2>
+      <p>The app is wrapped in 3 nested context providers in <code>App.jsx</code>. This is the <strong>entry point for all data flow</strong>:</p>
+
+      <div class="code-block">
+<span class="keyword">export default function</span> <span class="function">App</span>() {
+  <span class="keyword">return</span> (
+    <span class="variable">&lt;BrowserRouter&gt;</span>
+      <span class="variable">&lt;TestingModeProvider&gt;</span>         <span class="comment">// Controls testing/demo mode</span>
+        <span class="variable">&lt;AuthProvider&gt;</span>              <span class="comment">// Supabase auth (user, sign in/out)</span>
+          <span class="variable">&lt;AuditProvider&gt;</span>           <span class="comment">// Audit form state &amp; results (useReducer)</span>
+            <span class="variable">&lt;Navbar /&gt;</span>
+            <span class="variable">&lt;Routes&gt;</span>
+              <span class="variable">&lt;Route</span> <span class="string">path="/"</span> <span class="string">element={&lt;Landing /&gt;}</span> <span class="variable">/&gt;</span>
+              <span class="variable">&lt;Route</span> <span class="string">path="/audit"</span> <span class="string">element={&lt;Audit /&gt;}</span> <span class="variable">/&gt;</span>
+              <span class="variable">&lt;Route</span> <span class="string">path="/dashboard"</span> <span class="string">element={&lt;Dashboard /&gt;}</span> <span class="variable">/&gt;</span>
+              <span class="variable">&lt;Route</span> <span class="string">path="/my-audits"</span> <span class="string">element={&lt;MyAudits /&gt;}</span> <span class="variable">/&gt;</span>
+              <span class="variable">&lt;Route</span> <span class="string">path="/pricing"</span> <span class="string">element={&lt;Pricing /&gt;}</span> <span class="variable">/&gt;</span>
+            <span class="variable">&lt;/Routes&gt;</span>
+          <span class="variable">&lt;/AuditProvider&gt;</span>
+        <span class="variable">&lt;/AuthProvider&gt;</span>
+      <span class="variable">&lt;/TestingModeProvider&gt;</span>
+    <span class="variable">&lt;/BrowserRouter&gt;</span>
+  );
+}</div>
+
+      <div class="info-card accent-green">
+        <h4>💡 Key Insight</h4>
+        <p>Data flows <strong>down</strong> via React Context. Components update state by calling <strong>dispatch actions</strong> (e.g. <code>setResults()</code>, <code>setStep()</code>) or <strong>callbacks</strong> from context. There is no prop drilling — any component can access audit state by calling <code>useAudit()</code>.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 3. AUDIT FORM WIZARD FLOW -->
+    <div class="section">
+      <h2><span class="section-number">3</span> Audit Form Wizard <span class="highlight">Flow</span></h2>
+      <p>This is the <strong>main user journey</strong> — the complete path from landing page to seeing results.</p>
+
+      <div class="flow-diagram">
+<span class="comment">// Complete User Journey</span>
+
+<span class="step">Landing Page (/)</span>
+    ↓ Click "Start Free Audit"
+<span class="step">/audit — 3-Step Form Wizard</span>
+    │
+    ├── <span class="data">Step 1: BusinessProfileForm</span>
+    │   Collected: businessType, location, size, operatingHours, generator specs
+    │   ↓ dispatch UPDATE_AUDIT_DATA, UPDATE_GENERATOR
+    │
+    ├── <span class="data">Step 2: EnergySetupForm + ApplianceSelector</span>
+    │   Collected: gridHoursPerDay, appliances[] (from 30-item database)
+    │   ↓ dispatch UPDATE_AUDIT_DATA, SET_APPLIANCES
+    │
+    ├── <span class="data">Step 3: SpendConfirmation</span>
+    │   Collected: monthlyFuelSpend
+    │   ↓ handleSubmit()
+    │
+    ├── <span class="data">calculateAudit(auditData)</span>
+    ├── <span class="data">estimateSolar(results)</span>
+    │   ↓ setResults({...results, solarData})
+    │
+    └── <span class="data">navigate("/dashboard")</span></div>
+
+      <h3>AuditContext (useReducer)</h3>
+      <p>The form state is managed by a <code>useReducer</code> with the following actions:</p>
+
+      <table>
+        <tr><th>Action</th><th>Purpose</th></tr>
+        <tr><td><code>SET_STEP</code></td><td>Navigate between steps (1 → 2 → 3)</td></tr>
+        <tr><td><code>UPDATE_AUDIT_DATA</code></td><td>Update business profile fields</td></tr>
+        <tr><td><code>UPDATE_GENERATOR</code></td><td>Update generator sub-object (capacity, hours)</td></tr>
+        <tr><td><code>SET_APPLIANCES</code></td><td>Set appliance selections array</td></tr>
+        <tr><td><code>SET_RESULTS</code></td><td>Store computed audit results</td></tr>
+        <tr><td><code>LOAD_SAVED_AUDIT</code></td><td>Restore a previously saved audit from DB</td></tr>
+        <tr><td><code>RESET</code></td><td>Clear everything back to initial state</td></tr>
+      </table>
+
+      <div class="info-card accent-blue">
+        <h4>📌 Initial State Shape</h4>
+        <p style="margin: 0;">currentStep: 1  |  auditData: { businessType, location, size, operatingHours, generator: { capacityKVA, hoursPerDay, fuelType }, appliances[], gridHoursPerDay, monthlyFuelSpend }  |  auditResults: null</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 4. FORM PERSISTENCE -->
+    <div class="section">
+      <h2><span class="section-number">4</span> Form <span class="highlight">Persistence</span></h2>
+      <p>The app automatically saves form progress to <strong>localStorage</strong> so users can recover from accidental page refreshes or tab closures.</p>
+
+      <div class="flow-diagram">
+<span class="comment">// Draft Recovery Flow</span>
+
+<span class="data">User types in form</span>
+    → useFormPersistence hook (debounced 1 second)
+    → saveFormDraft() → localStorage key: "ecoaudit_form_draft"
+
+<span class="data">User refreshes or returns later</span>
+    → DraftRecoveryDialog checks hasFormDraft()
+    → If draft &lt; 60 minutes old → shows dialog
+    → restoreDraft() → loads from localStorage → dispatches to AuditContext
+
+<span class="data">User completes audit</span>
+    → clearFormDraft() removes the draft from localStorage</div>
+
+      <h3>Key Features</h3>
+      <ul>
+        <li><strong>Debounced saving</strong> (1 second) — avoids writing on every keystroke</li>
+        <li><strong>beforeunload listener</strong> — saves immediately if the user closes the tab</li>
+        <li><strong>24-hour expiry</strong> — drafts older than 24 hours are automatically deleted</li>
+        <li><strong>60-minute recovery window</strong> — only shows the dialog if the draft is less than 60 minutes old</li>
+      </ul>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 5. CALCULATION ENGINE -->
+    <div class="section">
+      <h2><span class="section-number">5</span> Calculation <span class="highlight">Engine</span></h2>
+      <p>This is the <strong>heart of the application</strong> — a synchronous function that takes the audit data and returns comprehensive energy analysis results.</p>
+
+      <div class="flow-diagram">
+<span class="comment">// handleSubmit() in Audit.jsx</span>
+
+<span class="keyword">const</span> results = <span class="function">calculateAudit</span>(auditData);  <span class="comment">// synchronous, no API call</span>
+<span class="keyword">const</span> solarData = <span class="function">estimateSolar</span>(results);    <span class="comment">// runs on calculation output</span>
+<span class="function">setResults</span>({ ...results, solarData });          <span class="comment">// stored in context</span>
+<span class="function">navigate</span>("/dashboard");                         <span class="comment">// redirect</span></div>
+
+      <h3>What `calculateAudit()` computes</h3>
+
+      <div class="info-card accent-green">
+        <h4>1️⃣ Appliance Energy Consumption</h4>
+        <p>For each appliance: <code>dailyKwh = (wattage × quantity × hoursPerDay) / 1000</code>. Then splits between <strong>grid</strong> (₦65/kWh) and <strong>generator</strong> (diesel formula) based on grid hours per day. Also calculates CO₂ per appliance.</p>
+      </div>
+
+      <div class="info-card accent-amber">
+        <h4>2️⃣ Generator Fuel Consumption</h4>
+        <p><code>dieselConsumption = kVA × 0.8 × loadFactor × 0.28 L/kWh</code>. Uses actual user fuel spend if provided (from Step 3 form), otherwise calculates from formula. Diesel cost: ₦1,650/L.</p>
+      </div>
+
+      <div class="info-card accent-blue">
+        <h4>3️⃣ Energy Score (0-100)</h4>
+        <p>Starts at <strong>68</strong> (neutral), then adjusts based on 5 factors:</p>
+        <ul>
+          <li><strong>Appliance efficiency ratings</strong> — ±10 points</li>
+          <li><strong>Grid vs generator ratio</strong> — more grid = higher score (±10)</li>
+          <li><strong>Cooling load percentage</strong> — high cooling = lower score (-12 to +5)</li>
+          <li><strong>Spend vs benchmark</strong> — compared to industry averages for business size (-15 to +10)</li>
+          <li><strong>Generator hours</strong> — heavy gen use = lower score (-10 to +5)</li>
+        </ul>
+      </div>
+
+      <div class="info-card accent-purple">
+        <h4>4️⃣ Recommendations & Carbon Comparisons</h4>
+        <p><strong>Recommendations</strong> are derived from actual data: low-efficiency replacements, gen reduction, cooling optimization, LED switching, solar viability. Sorted by priority (high → medium → low).</p>
+        <p><strong>Carbon comparisons</strong> are Nigerian-contextual: "equivalent to X Lagos-Abuja road trips", "X months of average Nigerian emissions".</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 6. SOLAR ESTIMATOR -->
+    <div class="section">
+      <h2><span class="section-number">6</span> Solar Estimator & <span class="highlight">Merchant Matching</span></h2>
+      <p>The app doesn't just give abstract solar suggestions — it matches users to <strong>real products from 4 verified Nigerian solar vendors</strong> with actual pricing.</p>
+
+      <h3>Vendor Database</h3>
+      <table>
+        <tr><th>Merchant</th><th>Packages</th><th>Price Range</th></tr>
+        <tr><td><strong>Femtech Energy</strong></td><td>Basic (1.2kW), Standard (3.5kW), Premium (8kW)</td><td>₦495k – ₦3.2M</td></tr>
+        <tr><td><strong>Arnergy</strong></td><td>5kW Business, 10kW Commercial</td><td>₦2.25M – ₦4.2M</td></tr>
+        <tr><td><strong>GVE Projects</strong></td><td>Business Light (2.5kW), Commercial Pro (7.5kW)</td><td>₦980k – ₦2.8M</td></tr>
+        <tr><td><strong>SolarForce Nigeria</strong></td><td>Starter SME (1.8kW), Max Business (6kW)</td><td>₦680k – ₦2.1M</td></tr>
+      </table>
+
+      <h3>Matching Algorithm</h3>
+      <p><code>matchSolarPackages()</code> scores each package against the business profile:</p>
+      <ul>
+        <li><strong>Size match</strong> (+30 pts) — Does the package support the business size (micro/small/medium)?</li>
+        <li><strong>Energy coverage ratio</strong> (+40 pts) — How much of the daily generator load can the system cover?</li>
+        <li><strong>Affordability</strong> (+20 pts) — Is the monthly payment (over 36 months) within 1.5x the current fuel budget?</li>
+        <li><strong>Goldilocks zone</strong> (+10 pts) — Is the system neither too small nor too big?</li>
+      </ul>
+      <p>Returns a verdict: <strong>"Viable"</strong> (score ≥ 70), <strong>"Marginal"</strong> (score ≥ 50), or <strong>"Not Yet"</strong>.</p>
+
+      <div class="info-card accent-amber">
+        <h4>🌍 Solar Vendor Service</h4>
+        <p>The <code>solarVendorService.js</code> implements a <strong>caching layer</strong> — fetches vendor data from a remote API with 24-hour cache TTL in localStorage. Falls back to the bundled merchant data if the network request fails. This allows you to update pricing without redeploying.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 7. DASHBOARD DATA FLOW -->
+    <div class="section">
+      <h2><span class="section-number">7</span> Dashboard <span class="highlight">Data Flow</span></h2>
+      <p>The Dashboard reads from <code>AuditContext</code> and renders a responsive grid of results:</p>
+
+      <div class="code-block">
+<span class="keyword">const</span> { auditResults, auditData } = <span class="function">useAudit</span>();
+
+<span class="keyword">if</span> (!auditResults) {
+  <span class="keyword">return</span> <span class="variable">&lt;EmptyState /&gt;</span>;  <span class="comment">// "No Audit Data Found"</span>
+}</div>
+
+      <h3>Dashboard Grid Layout</h3>
+      <div class="flow-diagram">
+<span class="step">Dashboard Grid (12-column layout)</span>
+│
+├── <span class="data">Left Column (4 cols)</span>
+│   ├── EnergyScoreMeter    ← score (0-100 gauge)
+│   └── CostCard            ← annual cost, grid vs gen split
+│
+├── <span class="data">Middle Column (4 cols)</span>
+│   └── CarbonCard          ← CO₂ with Nigerian comparisons
+│
+├── <span class="data">Right Column (4 cols)</span>
+│   └── RecommendationCards ← priority-sorted savings recs
+│
+├── <span class="data">Full Width (8 cols)</span>
+│   └── ConsumptionChart    ← Recharts bar chart by appliance
+│
+├── <span class="data">Side Panel (4 cols)</span>
+│   └── SolarVerdictCard    ← real merchant matches
+│
+└── <span class="data">Full Width (12 cols)</span>
+    └── AIReport             ← Gemini-generated or local fallback</div>
+
+      <h3>Save Audit Flow</h3>
+      <div class="flow-diagram">
+<span class="step">User clicks "Save Audit"</span>
+    ↓ <span class="highlight-text">Check authentication</span>
+    ├── <span class="comment">No user → show AuthModal</span>
+    │     After auth → try saving again
+    │
+    ↓ <span class="highlight-text">Check feature gate</span>
+    ├── <span class="comment">Over limit → show UpgradeModal</span>
+    │
+    ↓ <span class="data">saveAudit(user, auditData, auditResults)</span>
+    ├── <span class="comment">Supabase INSERT into "audits" table</span>
+    └── <span class="comment">Sets isSaved = true (shows "Saved" badge)</span></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 8. AUTHENTICATION FLOW -->
+    <div class="section">
+      <h2><span class="section-number">8</span> Authentication <span class="highlight">Flow</span></h2>
+      <p>Authentication is handled entirely by <strong>Supabase Auth</strong> with support for email/password and Google OAuth.</p>
+
+      <div class="flow-diagram">
+<span class="comment">// AuthProvider initialization</span>
+
+<span class="data">AuthProvider mounts</span>
+    ├── <span class="data">supabase.auth.getSession()</span>  <span class="comment">// Check for existing session</span>
+    ├── <span class="data">onAuthStateChange() listener</span>  <span class="comment">// Subscribe to auth events</span>
+    └── Sets user state → renders children when !loading
+
+<span class="comment">// Sign In flows</span>
+
+<span class="data">Email/Password</span>
+    → supabase.auth.signInWithPassword({ email, password })
+
+<span class="data">Google OAuth</span>
+    → supabase.auth.signInWithOAuth({ provider: 'google' })
+    → Redirect to Google → callback to /auth/callback
+
+<span class="data">Sign Up</span>
+    → supabase.auth.signUp({ email, password })
+    → Confirmation email sent → user confirms → session created
+
+<span class="data">Sign Out</span>
+    → supabase.auth.signOut()</div>
+
+      <div class="info-card accent-blue">
+        <h4>🔐 Session Management</h4>
+        <p>Supabase automatically manages JWT sessions via <strong>httpOnly cookies</strong> (for auth) and <strong>localStorage</strong> (for the session token). The <code>onAuthStateChange</code> listener updates the React context whenever the session changes, so the UI is always in sync with the auth state.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 9. FREEMIUM GATING -->
+    <div class="section">
+      <h2><span class="section-number">9</span> Freemium <span class="highlight">Gating</span></h2>
+      <p>The <code>useFeatureGate</code> hook controls access to features based on the user's plan (stored in the <code>profiles</code> table).</p>
+
+      <h3>Feature Matrix</h3>
+      <table>
+        <tr><th>Feature</th><th>Free</th><th>Pro (₦3k/mo)</th><th>Business (₦8k/mo)</th></tr>
+        <tr><td>Run energy audit</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Energy score</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Basic recommendations</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Solar merchant matches</td><td>✅</td><td>✅</td><td>✅</td></tr>
+        <tr><td>AI-generated report</td><td>❌</td><td>✅</td><td>✅</td></tr>
+        <tr><td>PDF export</td><td>❌</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Save audits</td><td>1 only</td><td>5 audits</td><td>Unlimited</td></tr>
+        <tr><td>Audit history</td><td>❌</td><td>✅</td><td>✅</td></tr>
+        <tr><td>Compare audits</td><td>❌</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Multiple branches</td><td>❌</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Team access (3 users)</td><td>❌</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Monthly email report</td><td>❌</td><td>❌</td><td>✅</td></tr>
+        <tr><td>White label PDF</td><td>❌</td><td>❌</td><td>✅</td></tr>
+      </table>
+
+      <div class="key-points">
+        <h4>🔑 Key Implementation Details</h4>
+        <ul>
+          <li><strong>canAccess(feature)</strong> — checks if the user's plan includes a specific feature using tiered lists (freeFeatures, proFeatures, businessFeatures)</li>
+          <li><strong>canSaveAudit()</strong> — checks audit count limits: Free = &lt;1, Pro = &lt;5, Business = unlimited</li>
+          <li><strong>Testing mode bypass</strong> — when testing mode is active, all features are automatically accessible regardless of plan</li>
+          <li><strong>Profile fetching</strong> — the hook fetches the user's profile from Supabase and caches it in React state</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 10. PAYMENT FLOW -->
+    <div class="section">
+      <h2><span class="section-number">10</span> Payment <span class="highlight">Flow</span> (Paystack)</h2>
+      <p>Paystack is the Nigerian payment gateway. It supports <strong>cards, bank transfers, and USSD</strong> — essential for the Nigerian market.</p>
+
+      <div class="flow-diagram">
+<span class="comment">// Payment Flow</span>
+
+<span class="step">User clicks "Subscribe" (Pricing page) or "Select" (UpgradeModal)</span>
+    ↓
+<span class="data">initializePayment(user, planType, onSuccess)</span>
+    ↓
+<span class="data">PaystackPop.setup()</span>
+    ├── key: VITE_PAYSTACK_PUBLIC_KEY
+    ├── email: user.email
+    ├── amount: <span class="highlight-text">300000</span> (Pro) / <span class="highlight-text">800000</span> (Business) / <span class="highlight-text">150000</span> (One-time)
+    ├── currency: 'NGN'
+    └── ref: 'ecoaudit_{planType}_{timestamp}'
+    ↓
+<span class="data">handler.openIframe()</span>  <span class="comment">// Opens Paystack payment modal</span>
+    ↓
+<span class="comment">User enters card details on Paystack's secure iframe</span>
+    ↓
+<span class="data">callback(response)</span>
+    ├── if (response.status === 'success')
+    │   ├── planType !== 'one_time' → updateUserPlan(user.id, planType)
+    │   └── onSuccess() → window.location.reload()
+    └── if error → alert with friendly message</div>
+
+      <div class="info-card accent-amber">
+        <h4>💰 Pricing</h4>
+        <p><strong>Pro:</strong> ₦3,000/month (30,000 kobo) | <strong>Business:</strong> ₦8,000/month (80,000 kobo) | <strong>One-time AI Report:</strong> ₦1,500 (15,000 kobo)</p>
+        <p style="margin-top: 8px;"><strong>Paystack fees:</strong> 1.5% + ₦100 flat fee per transaction. On ₦3,000 Pro plan, Paystack takes ~₦145 → you keep ₦2,855.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 11. AI REPORT FLOW -->
+    <div class="section">
+      <h2><span class="section-number">11</span> AI Report <span class="highlight">Flow</span> (Gemini + Fallback)</h2>
+      <p>The AI Report has a <strong>dual-path architecture</strong> — it tries Gemini first, then falls back to a local template-based report.</p>
+
+      <div class="flow-diagram">
+<span class="comment">// Dual-path AI Report Generation</span>
+
+<span class="step">AIReport component mounts</span>
+    ↓
+<span class="data">generateAuditReport(auditResults)</span>
+    ↓
+├── <span class="highlight-text">IF VITE_GEMINI_API_KEY is set</span>
+│   ├── <span class="function">buildPrompt()</span>  <span class="comment">// Builds structured prompt with user's audit data</span>
+│   ├── POST to Gemini 2.5 Flash API
+│   └── Returns plain-English report text
+│
+└── <span class="highlight-text">IF API key missing OR API call fails</span>
+    └── <span class="function">generateLocalReport()</span>  <span class="comment">// Client-side template-based report</span>
+        ├── Executive Summary (score + category)
+        ├── Key Findings (top energy consumers)
+        ├── Priority Actions (recommendations grouped by impact)
+        ├── Solar Assessment (verdict + best match)
+        └── Next Steps</div>
+
+      <h3>Prompt Structure</h3>
+      <div class="code-block">
+<span class="string">`You are an energy efficiency advisor for Nigerian SMEs.</span>
+<span class="string">The user has completed an energy audit...</span>
+
+<span class="string">Write an audit report in plain English. Be direct,</span>
+<span class="string">practical, and Nigerian context-aware. No jargon.</span>
+<span class="string">Speak like a trusted advisor. Under 400 words.</span>
+
+<span class="string">Structure:</span>
+<span class="string">1. One opening summary sentence</span>
+<span class="string">2. Top 2-3 energy problems observed</span>
+<span class="string">3. Three specific actions with estimated naira savings</span>
+<span class="string">4. A closing motivational line`</span></div>
+
+      <div class="info-card accent-purple">
+        <h4>🤖 Cost Efficiency</h4>
+        <p>Gemini 2.5 Flash costs ~$0.00015 per 1,000 tokens. Each audit report uses ~2,000–3,000 tokens, so <strong>each AI report costs less than ₦1</strong>. Even 1,000 reports/month = only ~₦750 total.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 12. PDF EXPORT FLOW -->
+    <div class="section">
+      <h2><span class="section-number">12</span> PDF Export <span class="highlight">Flow</span></h2>
+      <p>The PDF export captures the dashboard as a high-quality image and renders it into a multi-page A4 PDF.</p>
+
+      <div class="flow-diagram">
+<span class="comment">// PDF Export Flow</span>
+
+<span class="step">User clicks "Export PDF"</span>
+    ↓
+├── <span class="highlight-text">Check feature gate</span>
+│   ├── Free user → onUpgradeRequired() → UpgradeModal
+│   └── Pro/Business → proceeds
+    ↓
+<span class="data">exportPdf("dashboard-content", businessName)</span>
+    ↓
+<span class="data">toPng(element, { pixelRatio: 2, cacheBust: true })</span>
+    <span class="comment">// html-to-image captures the DOM as a PNG (handles SVG like Recharts)</span>
+    ↓
+<span class="data">jsPDF A4 portrait document created</span>
+    ↓
+<span class="data">Image added to fill page width, height scales proportionally</span>
+    ↓
+<span class="highlight-text">If content overflows → additional pages added</span>
+    ↓
+<span class="data">File saved: "EcoAudit-{BusinessName}-{date}.pdf"</span></div>
+
+      <h3>Component States</h3>
+      <table>
+        <tr><th>State</th><th>Icon</th><th>Text</th></tr>
+        <tr><td>Default (Pro user)</td><td>Download</td><td>Export PDF</td></tr>
+        <tr><td>Locked (Free user)</td><td>Lock</td><td>Export PDF</td></tr>
+        <tr><td>Loading</td><td>Spinner</td><td>Generating PDF...</td></tr>
+        <tr><td>Success</td><td>Checkmark</td><td>Downloaded!</td></tr>
+        <tr><td>Error</td><td>X mark</td><td>Export Failed</td></tr>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 13. TESTING MODE -->
+    <div class="section">
+      <h2><span class="section-number">13</span> Testing <span class="highlight">Mode</span></h2>
+      <p>A hidden feature that allows demonstrating the app without setting up Supabase. Perfect for demos, testing, and development.</p>
+
+      <div class="flow-diagram">
+<span class="comment">// Testing Mode Activation</span>
+
+<span class="data">enableTestingMode()</span>
+    → localStorage.setItem('ecoaudit_testing_mode', 'true')
+    → Forces component re-renders
+    ↓
+
+<span class="highlight-text">When testing mode is ACTIVE:</span>
+    ├── AuthProvider returns FAKE_USER immediately (no Supabase call)
+    ├── useFeatureGate returns 'business' plan (all features unlocked)
+    ├── Navbar shows amber "TESTING MODE" banner at top
+    └── Sign out disables testing mode
+
+<span class="highlight-text">FAKE_USER profile:</span>
+    ├── id: 'testing-user-123'
+    ├── email: 'testing@ecoaudit.ng'
+    └── plan: 'business' (all features accessible)</div>
+
+      <div class="info-card accent-green">
+        <h4>🧪 Why Testing Mode Matters</h4>
+        <p>Since EcoAudit NG requires Supabase for auth and saving audits, testing mode is essential for: (1) demoing the app to potential users/investors without setup, (2) developing UI features without auth overhead, (3) testing the full freemium experience with business-tier access.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 14. DATABASE SCHEMA -->
+    <div class="section">
+      <h2><span class="section-number">14</span> Database <span class="highlight">Schema</span></h2>
+      <p>Supabase database with Row-Level Security (RLS) ensuring users only access their own data.</p>
+
+      <div class="code-block">
+<span class="comment">-- User profiles table</span>
+<span class="keyword">CREATE TABLE</span> profiles (
+  id UUID PRIMARY KEY <span class="keyword">REFERENCES</span> auth.users ON DELETE CASCADE,
+  email TEXT,
+  full_name TEXT,
+  plan TEXT DEFAULT 'free',    <span class="comment">-- 'free', 'pro', or 'business'</span>
+  audit_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+<span class="comment">-- Audits table</span>
+<span class="keyword">CREATE TABLE</span> audits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID <span class="keyword">REFERENCES</span> profiles(id) ON DELETE CASCADE,
+  business_name TEXT,
+  location TEXT,
+  energy_score INTEGER,
+  audit_data JSONB,            <span class="comment">-- Full form data</span>
+  results JSONB,               <span class="comment">-- Full calculation results</span>
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);</div>
+
+      <h3>Row-Level Security Policies</h3>
+      <ul>
+        <li><strong>profiles</strong>: Users can SELECT and UPDATE only their own profile</li>
+        <li><strong>audits</strong>: Users can SELECT, INSERT, and DELETE only their own audits</li>
+        <li>All policies use <code>auth.uid()</code> to identify the current user</li>
+      </ul>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- 15. KEY ARCHITECTURAL DECISIONS -->
+    <div class="section">
+      <h2><span class="section-number">15</span> Key Architectural <span class="highlight">Decisions</span></h2>
+
+      <div class="key-points">
+        <h4>🏗️ What to Highlight in Your Interview</h4>
+        <ol>
+          <li><strong>Fully client-side computation</strong> — The calculation engine runs synchronously in the browser. No server round-trip needed. Results are instant. This makes the app fast and cheap to host (free on Vercel).</li>
+          
+          <li><strong>Context + useReducer over Redux</strong> — For an app with a single form flow and results display, useReducer provides all the power of a state machine without the boilerplate of Redux. The AuditContext has 7 clear action types that map directly to user interactions.</li>
+          
+          <li><strong>Progressive enhancement with gating</strong> — The basic audit is completely free. AI reports, PDF export, and audit history are gated behind subscriptions. This converts users before asking for payment.</li>
+          
+          <li><strong>Graceful degradation everywhere</strong> — AI report falls back to local generation if Gemini is unreachable. Solar vendor data falls back to bundled data if the remote API fails. Form data persists to localStorage if the user refreshes.</li>
+          
+          <li><strong>Testing mode for demos</strong> — A localStorage flag bypasses Supabase auth entirely, returning a fake user with business plan access. Essential for demonstrating the full product without setting up infrastructure.</li>
+          
+          <li><strong>Nigerian-first design</strong> — The entire app is built for Nigerian realities: diesel generator calculations, Paystack (not Stripe), Naira formatting, local solar vendors, and carbon comparisons in Nigerian context (Lagos-Abuja road trips).</li>
+          
+          <li><strong>Real vendor data, not estimates</strong> — The solar matching uses actual pricing from 4 verified Nigerian merchants with 9 real products. This gives users actionable quotes, not abstract recommendations.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- COMPLETE DATA FLOW DIAGRAM -->
+    <div class="section">
+      <h2>🎯 Complete Data Flow <span class="highlight">Diagram</span></h2>
+
+      <div class="flow-diagram">
+<span class="comment">// END-TO-END DATA FLOW</span>
+
+<span class="step">User → Landing Page</span>
+    ↓ Click "Start Free Audit"
+<span class="step">/audit</span>
+    │
+    ├── Step 1: <span class="data">BusinessProfileForm</span> → <span class="data">AuditContext (useReducer)</span>
+    ├── Step 2: <span class="data">EnergySetupForm + ApplianceSelector</span> → <span class="data">AuditContext</span>
+    ├── Step 3: <span class="data">SpendConfirmation</span> → <span class="data">AuditContext</span>
+    │
+    └── handleSubmit()
+        │
+        ├── <span class="function">calculateEngine.calculateAudit()</span>  ← sync
+        ├── <span class="function">solarEstimator.estimateSolar()</span>    ← sync
+        │
+        ├── <span class="data">AuditContext.setResults()</span>           ← store in state
+        └── <span class="data">navigate("/dashboard")</span>               ← route change
+            │
+            ↓
+<span class="step">Dashboard</span>
+    │
+    ├── Reads from <span class="data">AuditContext</span>
+    ├── Renders component grid
+    │
+    ├── "Save Audit"
+    │   ├── ← <span class="data">Auth check</span> → AuthModal if not logged in
+    │   └── ← <span class="data">Feature gate</span> → UpgradeModal if over limit
+    │       └── <span class="data">Supabase INSERT</span>
+    │
+    ├── "AI Report"
+    │   ├── <span class="data">Gemini API</span> → success → display
+    │   └── <span class="data">Fallback</span> → local report → display with "Offline" badge
+    │
+    └── "Export PDF"
+        ├── <span class="data">html-to-image</span> captures DOM
+        └── <span class="data">jsPDF</span> generates multi-page PDF</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- FOOTER -->
+    <div style="text-align: center; padding-top: 20px;">
+      <p style="color: #52525b; font-size: 13px;">
+        EcoAudit NG — Built by <strong style="color: #71717a;">LUIPHYX (Ifeoluwa Abdulsamad)</strong> · 2026
+      </p>
+      <p style="color: #52525b; font-size: 12px; margin-top: 4px;">
+        Good luck with your interview! 🚀
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>

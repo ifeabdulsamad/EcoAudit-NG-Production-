@@ -48,12 +48,28 @@ export const getUserProfile = async (userId) => {
 }
 
 export const updateUserPlan = async (userId, planType) => {
+  // If in local UI testing mode, skip the database update
+  if (userId === 'testing-user-123') {
+    return { plan: planType };
+  }
+
+  // Update profiles table
   const { data, error } = await supabase
     .from('profiles')
     .update({ plan: planType })
     .eq('id', userId)
 
   if (error) throw error
+
+  // Also update auth metadata so the frontend Navbar updates instantly
+  const { error: authError } = await supabase.auth.updateUser({
+    data: { tier: planType }
+  });
+  
+  if (authError) {
+    console.warn("Could not update auth metadata, user may need to refresh:", authError);
+  }
+
   return data
 }
 

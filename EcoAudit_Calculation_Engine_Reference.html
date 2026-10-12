@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>EcoAudit NG — Calculation Engine Reference</title>
+<style>
+  @page { size: A4; margin: 20mm; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a2e; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; }
+  h1 { color: #059669; border-bottom: 3px solid #059669; padding-bottom: 10px; font-size: 24px; }
+  h2 { color: #065f46; margin-top: 30px; font-size: 18px; border-left: 4px solid #10b981; padding-left: 12px; }
+  h3 { color: #047857; font-size: 15px; margin-top: 20px; }
+  .subtitle { color: #6b7280; font-size: 14px; margin-top: -10px; }
+  code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'Consolas', monospace; color: #dc2626; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 12px; line-height: 1.5; }
+  pre code { background: none; color: inherit; padding: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th { background: #059669; color: white; padding: 8px 12px; text-align: left; }
+  td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; }
+  tr:nth-child(even) { background: #f9fafb; }
+  .highlight { background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
+  .warning { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
+  .formula-box { background: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; padding: 16px; margin: 12px 0; font-size: 14px; }
+  .section { page-break-inside: avoid; }
+  .header-meta { display: flex; justify-content: space-between; color: #9ca3af; font-size: 12px; margin-bottom: 20px; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; }
+  ul { padding-left: 20px; }
+  li { margin: 4px 0; }
+  .emoji { font-size: 16px; }
+</style>
+</head>
+<body>
+
+<div class="header-meta">
+  <span>EcoAudit NG — Calculation Engine Reference</span>
+  <span>Interview Prep Document</span>
+</div>
+
+<h1>🧮 EcoAudit NG — Calculation Engine Deep Dive</h1>
+<p class="subtitle">Complete formula reference for the energy audit calculation engine. Covers all math from input to output.</p>
+
+<!-- CONSTANTS -->
+<div class="section">
+<h2>1. Core Constants</h2>
+<table>
+  <tr><th>Constant</th><th>Value</th><th>Source</th></tr>
+  <tr><td><code>DIESEL_EMISSIONS_FACTOR</code></td><td>2.68 kg CO₂/litre</td><td>IPCC standard</td></tr>
+  <tr><td><code>DIESEL_PRICE_NGN</code></td><td>₦1,650/litre</td><td>2025 Nigerian market avg</td></tr>
+  <tr><td><code>GENERATOR_EFFICIENCY</code></td><td>0.85 (85%)</td><td>Typical diesel genset</td></tr>
+  <tr><td><code>SOLAR_COST_PER_KW_NGN</code></td><td>₦600,000/kW installed</td><td>2025 Nigeria avg</td></tr>
+  <tr><td>Grid Rate</td><td>₦65/kWh</td><td>NERC avg tariff</td></tr>
+  <tr><td>Diesel Burn Rate</td><td>0.28 L/kWh</td><td>At full load</td></tr>
+  <tr><td>Nigerian Peak Sun Hours</td><td>4.5 hours/day</td><td>Solar sizing constant</td></tr>
+</table>
+</div>
+
+<!-- FORMULA 1 -->
+<div class="section">
+<h2>2. Diesel Consumption Per Hour</h2>
+<div class="formula-box">
+  <strong>Formula:</strong><br>
+  <code>kW = kVA × 0.8</code> &nbsp;→&nbsp; <code>litres/hour = kW × loadFactor × 0.28</code>
+</div>
+<p><strong>What's happening:</strong></p>
+<ul>
+  <li>A generator is rated in <strong>kVA</strong> (apparent power), but usable power is <strong>kW</strong> (real power). The conversion uses a <strong>power factor of 0.8</strong> — industry standard for diesel gensets.</li>
+  <li><code>loadFactor = 0.7</code> means the generator typically runs at 70% capacity (not full load, not idle).</li>
+  <li><code>0.28 L/kWh</code> is the diesel burn rate — litres of diesel to produce 1 kWh. Real-world measured value for typical Nigerian gensets.</li>
+</ul>
+
+<div class="highlight">
+  <strong>Example:</strong> 10KVA genset → <code>10 × 0.8 × 0.7 × 0.28 = 1.568 litres/hour</code>
+</div>
+</div>
+
+<!-- FORMULA 2 -->
+<div class="section">
+<h2>3. Per-Appliance Energy Consumption</h2>
+<div class="formula-box">
+  <strong>Formula:</strong><br>
+  <code>dailyKwh = (wattage × quantity × hoursPerDay) / 1000</code><br>
+  <code>monthlyKwh = dailyKwh × 30</code><br>
+  <code>annualKwh = dailyKwh × 365</code>
+</div>
+<p><strong>What's happening:</strong></p>
+<ul>
+  <li><code>wattage</code> comes from <code>applianceDatabase.js</code> (e.g., AC 1HP = 746W, chest freezer = 350W)</li>
+  <li><code>quantity</code> is how many of that appliance the user has (e.g., 3 ACs)</li>
+  <li><code>hoursPerDay</code> is how long it runs per day</li>
+  <li>Divide by 1000 to convert watts → kilowatts</li>
+</ul>
+
+<div class="highlight">
+  <strong>Example:</strong> 3 × AC 1HP (746W each), running 8h/day:<br>
+  <code>dailyKwh = (746 × 3 × 8) / 1000 = 17.9 kWh/day</code><br>
+  <code>annualKwh = 17.9 × 365 = 6,534 kWh/year</code>
+</div>
+</div>
+
+<!-- FORMULA 3 -->
+<div class="section">
+<h2>4. Grid vs Generator Split</h2>
+<div class="formula-box">
+  <strong>Formula:</strong><br>
+  <code>gridFraction = min(gridHoursPerDay / 24, 1)</code><br>
+  <code>genFraction = 1 - gridFraction</code>
+</div>
+<p><strong>What's happening:</strong></p>
+<ul>
+  <li>If the user gets 8 hours of grid (PHCN) per day:
+    <ul>
+      <li><code>gridFraction = 8/24 = 0.33</code> (33% of the time on grid)</li>
+      <li><code>genFraction = 0.67</code> (67% on generator)</li>
+    </ul>
+  </li>
+  <li>The same appliance's annual kWh gets split proportionally between grid and generator.</li>
+</ul>
+
+<div class="warning">
+  <strong>Why this matters:</strong> Grid electricity costs ₦65/kWh, but generator electricity costs ~₦543/kWh. The split determines how expensive your energy is.
+</div>
+</div>
+
+<!-- FORMULA 4 -->
+<div class="section">
+<h2>5. Cost Per kWh (Grid vs Generator)</h2>
+<div class="formula-box">
+  <strong>Grid Cost:</strong> <code>₦65/kWh</code> (flat NERC average tariff)<br><br>
+  <strong>Generator Cost:</strong><br>
+  <code>litresPerKwh = 0.28 / 0.85 = 0.329 L/kWh</code><br>
+  <code>costPerKwh = 0.329 × ₦1,650 = ₦543/kWh</code>
+</div>
+<p><strong>What's happening:</strong></p>
+<ul>
+  <li>Grid: flat ₦65/kWh (the Nigerian average electricity tariff)</li>
+  <li>Generator: <code>0.28 L/kWh ÷ 0.85 efficiency × ₦1,650/litre = ~₦543/kWh</code></li>
+  <li>Generator electricity is <strong>~8× more expensive</strong> than grid — this is the core insight of the app</li>
+</ul>
+
+<p><strong>Per-appliance annual cost:</strong></p>
+<pre><code>annualGridCost = gridAnnualKwh × 65;
+annualGenCost = genAnnualKwh × 543;
+annualCost = annualGridCost + annualGenCost;</code></pre>
+</div>
+
+<!-- FORMULA 5 -->
+<div class="section">
+<h2>6. Carbon Emissions (CO₂)</h2>
+<div class="formula-box">
+  <strong>Per-kWh emissions from generator:</strong><br>
+  <code>co2PerKwhGen = (2.68 × 0.28) / 0.85 = 0.884 kg CO₂/kWh</code><br><br>
+  <strong>Total from appliance kWh:</strong><br>
+  <code>annualCo2 = genAnnualKwh × 0.884</code><br><br>
+  <strong>Total from fuel spend:</strong><br>
+  <code>annualLitres = (monthlyFuelCost / 1650) × 12</code><br>
+  <code>totalAnnualCo2 = annualLitres × 2.68</code>
+</div>
+<p><strong>What's happening:</strong></p>
+<ul>
+  <li>Burning 1 litre of diesel produces <strong>2.68 kg of CO₂</strong> (IPCC standard)</li>
+  <li>It takes 0.28 litres to make 1 kWh (before efficiency loss)</li>
+  <li>With 85% efficiency, actual consumption is higher: <code>0.28 / 0.85 = 0.329 L/kWh</code></li>
+  <li>So: <code>0.329 L/kWh × 2.68 kg/L = 0.884 kg CO₂/kWh</code></li>
+  <li>Grid CO₂ is treated as negligible (the focus is on diesel)</li>
+</ul>
+</div>
+
+<!-- FORMULA 6 -->
+<div class="section">
+<h2>7. Energy Score (0–100)</h2>
+<div class="formula-box">
+  <strong>Starting point:</strong> <code>score = 68</code> (neutral baseline)
+</div>
+
+<table>
+  <tr><th>Factor</th><th>Formula</th><th>Range</th></tr>
+  <tr><td>Appliance efficiency</td><td><code>(avgEfficiency - 3) × 5</code></td><td>-10 to +10</td></tr>
+  <tr><td>Grid vs gen ratio</td><td><code>(gridFraction - 0.5) × 20</code></td><td>-10 to +10</td></tr>
+  <tr><td>Cooling load %</td><td>If &gt;50% → -12, &gt;35% → -7, &lt;15% → +5</td><td>-12 to +5</td></tr>
+  <tr><td>Spend vs benchmark</td><td>If &gt;2× → -15, &gt;1.3× → -10, &gt;1× → -3, &lt;0.5× → +10</td><td>-15 to +10</td></tr>
+  <tr><td>Generator hours</td><td>If &gt;70% day → -10, &gt;40% → -6, &lt;20% → +5</td><td>-10 to +5</td></tr>
+</table>
+
+<p><strong>Final:</strong> <code>Math.max(0, Math.min(100, Math.round(score)))</code> — clamped to 0–100.</p>
+
+<p><strong>Benchmarks for spend comparison:</strong></p>
+<table>
+  <tr><th>Business Size</th><th>Monthly Benchmark</th></tr>
+  <tr><td>Micro</td><td>₦60,000</td></tr>
+  <tr><td>Small</td><td>₦120,000</td></tr>
+  <tr><td>Medium</td><td>₦300,000</td></tr>
+</table>
+</div>
+
+<!-- FORMULA 7 -->
+<div class="section">
+<h2>8. Solar Package Matching</h2>
+<div class="formula-box">
+  <strong>Match Score (max ~100):</strong><br>
+  <code>sizeMatch ? +30 : 0</code> &nbsp;&nbsp;// Package suits business size<br>
+  <code>coverageRatio × 40</code> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;// How well it covers energy needs (0-40)<br>
+  <code>affordable ? +20 : 0</code> &nbsp;&nbsp;// Monthly payment ≤ 1.5× fuel budget<br>
+  <code>goldilocksZone ? +10 : 0</code> // System size 1×–2× actual need
+</div>
+
+<p><strong>Payback Period:</strong></p>
+<pre><code>paybackMonths = pkg.totalPrice / (monthlyFuelCost × 0.75 × coverageRatio)</code></pre>
+<p>Assumes solar saves 75% of the fuel cost for the portion it covers.</p>
+
+<p><strong>Solar Verdict Logic:</strong></p>
+<table>
+  <tr><th>Condition</th><th>Verdict</th></tr>
+  <tr><td>matchScore ≥ 70 AND payback ≤ 30 months</td><td><strong>Viable</strong> ✅</td></tr>
+  <tr><td>matchScore ≥ 50 AND payback ≤ 48 months</td><td><strong>Marginal</strong> ⚠️</td></tr>
+  <tr><td>fuel spend &lt; ₦30,000/month</td><td><strong>Not Yet</strong> ❌</td></tr>
+  <tr><td>Everything else</td><td><strong>Not Yet</strong> ❌</td></tr>
+</table>
+</div>
+
+<!-- FORMULA 8 -->
+<div class="section">
+<h2>9. Recommendations Engine</h2>
+<p>The recommendation generator checks 5 conditions and returns the top 3 by priority:</p>
+<table>
+  <tr><th>Condition</th><th>Priority</th><th>Savings Estimate</th></tr>
+  <tr><td>Low-efficiency appliances (rating ≤ 2)</td><td>High</td><td>40% of that appliance's annual cost</td></tr>
+  <tr><td>Generator hours &gt; 50% of day</td><td>High</td><td>30% of annual fuel spend</td></tr>
+  <tr><td>Cooling load &gt; 30% of total</td><td>Medium</td><td>15% of total annual cost</td></tr>
+  <tr><td>Inefficient lighting (rating &lt; 3)</td><td>Medium</td><td>70% of lighting annual cost</td></tr>
+  <tr><td>Monthly fuel spend &gt; ₦100,000</td><td>Medium</td><td>60% of annual fuel spend</td></tr>
+</table>
+</div>
+
+<!-- QUICK REFERENCE -->
+<div class="section" style="page-break-before: always;">
+<h2>10. Quick Reference Card</h2>
+<table>
+  <tr><th>Concept</th><th>Formula</th><th>Value</th></tr>
+  <tr><td>kVA → kW</td><td><code>kVA × 0.8</code></td><td>Power factor</td></tr>
+  <tr><td>Diesel burn rate</td><td><code>0.28 L/kWh</code></td><td>At full load</td></tr>
+  <tr><td>Generator cost/kWh</td><td><code>0.28 ÷ 0.85 × ₦1,650</code></td><td><strong>~₦543/kWh</strong></td></tr>
+  <tr><td>Grid cost/kWh</td><td>Fixed</td><td><strong>₦65/kWh</strong></td></tr>
+  <tr><td>Grid:Gen ratio</td><td><code>gridHours ÷ 24</code></td><td>0 to 1</td></tr>
+  <tr><td>CO₂ per litre diesel</td><td>IPCC standard</td><td><strong>2.68 kg</strong></td></tr>
+  <tr><td>CO₂ per kWh (gen)</td><td><code>0.28 × 2.68 ÷ 0.85</code></td><td><strong>0.884 kg</strong></td></tr>
+  <tr><td>Energy score base</td><td>Starting point</td><td><strong>68/100</strong></td></tr>
+  <tr><td>Solar system sizing</td><td><code>dailyKwhFromGen ÷ 4.5</code></td><td>4.5 = sun hours</td></tr>
+</table>
+
+<h2>11. Data Flow Summary</h2>
+<div class="highlight">
+  <strong>Input → Process → Output</strong><br><br>
+  <strong>User Input (3 steps):</strong><br>
+  Step 1: businessType, location, size, operatingHours<br>
+  Step 2: generator {capacityKVA, hoursPerDay, fuelType}, gridHoursPerDay, appliances [{id, quantity, hoursPerDay}]<br>
+  Step 3: monthlyFuelSpend (actual or estimated)<br><br>
+
+  <strong>Processing (<code>calculateAudit()</code>):</strong><br>
+  1. For each appliance: calculate kWh/day → split by grid/gen → calculate cost & CO₂<br>
+  2. Calculate total fuel consumption from generator specs<br>
+  3. Use user's actual fuel spend (or calculated) for total annual cost<br>
+  4. Calculate energy score from 5 weighted factors<br>
+  5. Generate top 3 recommendations based on data analysis<br>
+  6. Calculate carbon comparisons (Lagos-Abuja trips, Nigerian monthly avg)<br><br>
+
+  <strong>Solar Matching (<code>estimateSolar()</code>):</strong><br>
+  1. Match audit results against 9 real Nigerian solar packages<br>
+  2. Score each package (size, coverage, affordability, goldilocks zone)<br>
+  3. Return top 6 matches with verdict (Viable/Marginal/Not Yet)<br><br>
+
+  <strong>Output:</strong><br>
+  { score, totalAnnualCost, totalAnnualCo2, applianceResults[], recommendations[], carbonComparisons, solarData }
+</div>
+
+<h2>12. State Management (AuditContext)</h2>
+<p>Uses <code>useReducer</code> with these actions:</p>
+<table>
+  <tr><th>Action</th><th>Payload</th><th>Purpose</th></tr>
+  <tr><td><code>SET_STEP</code></td><td>number (1-4)</td><td>Current wizard step</td></tr>
+  <tr><td><code>UPDATE_AUDIT_DATA</code></td><td>partial auditData</td><td>Merge into auditData (Step 1 fields)</td></tr>
+  <tr><td><code>UPDATE_GENERATOR</code></td><td>partial generator</td><td>Merge into generator sub-object</td></tr>
+  <tr><td><code>SET_APPLIANCES</code></td><td>appliance[]</td><td>Replace full appliance list</td></tr>
+  <tr><td><code>SET_RESULTS</code></td><td>auditResults</td><td>Store calculation output</td></tr>
+  <tr><td><code>LOAD_SAVED_AUDIT</code></td><td>saved audit record</td><td>Restore from database</td></tr>
+  <tr><td><code>RESET</code></td><td>none</td><td>Return to initial state</td></tr>
+</table>
+</div>
+
+<div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb; color: #9ca3af; font-size: 12px; text-align: center;">
+  EcoAudit NG — Calculation Engine Reference · Generated for Interview Preparation · June 2026
+</div>
+
+</body>
+</html>
